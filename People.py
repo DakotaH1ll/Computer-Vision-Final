@@ -22,24 +22,24 @@ import sys
 from random import randint
 
 
-def non_max_suppression(boxes, maxOverlap):
+def non_max_suppression(boxesOld, maxOverlap):
 
 	# No empty arrays
-	if len(boxes) == 0:
+	if len(boxesOld) == 0:
 		return []
 
 	# Convert integer values in the array to floats
-	if boxes.dtype.kind == "i":
-		boxes = boxes.astype("float")
+	if boxesOld.dtype.kind == "i":
+		boxesOld = boxesOld.astype("float")
 
 	# Create new array for storing boxes
-	pick = []
+	boxesNew = []
 
 	# Get the coordinates of the old boxes
-	x1 = boxes[:,0]
-	y1 = boxes[:,1]
-	x2 = boxes[:,2]
-	y2 = boxes[:,3]
+	x1 = boxesOld[:,0]
+	y1 = boxesOld[:,1]
+	x2 = boxesOld[:,2]
+	y2 = boxesOld[:,3]
 
 	# Calculate area and sort the boxes by bottom right corner Y value
 	area = (x2 - x1 + 1) * (y2 - y1 + 1)
@@ -50,7 +50,7 @@ def non_max_suppression(boxes, maxOverlap):
 		# Add the indexes in descending order to the new array
 		last = len(idxs) - 1
 		i = idxs[last]
-		pick.append(i)
+		boxesNew.append(i)
 
 		# Find the largest (x, y) coordinates for the start of
 		# the bounding box and the smallest (x, y) coordinates
@@ -72,7 +72,7 @@ def non_max_suppression(boxes, maxOverlap):
 			np.where(overlap > maxOverlap)[0])))
 
 	#Return the new bounding boxes as integers (easier to draw)
-	return boxes[pick].astype("int")
+	return boxesOld[boxesNew].astype("int")
 
 
 
@@ -91,14 +91,14 @@ image = cv2.imread(sys.argv[1])
 rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
 
 # Apply NMS to the rectangles, using the given paramter (0-1)
-pick =  non_max_suppression(rects, float(sys.argv[2]))
+boxesNew =  non_max_suppression(rects, float(sys.argv[2]))
 
 # Drae the NMS'd rectangles
-for (xA, yA, xB, yB) in pick:
+for (xA, yA, xB, yB) in boxesNew:
 	cv2.rectangle(image, (xA, yA), (xB, yB), (randint(0, 255), randint(0, 255), randint(0, 255)), 5)
 
 #Print out the number of 'people' found, not always accurate
-print("Number Of People Found: ", len(pick))
+print("Number Of People Found: ", len(boxesNew))
 
 # Show the image with people highlighted
 cv2.imshow("Found People", image)
