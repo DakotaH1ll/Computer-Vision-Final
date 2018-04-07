@@ -2,7 +2,7 @@
 Final project for CSCI 4220U
 
 To Run:
-Python People.py img maxOverlap
+>Python People.py img maxOverlap
                   ^      ^
                   |      |
             Image File   |
