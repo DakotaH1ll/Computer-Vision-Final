@@ -5,4 +5,5 @@ To Run:
 >Python People.py img maxOverlap
 
 img - image file
+
 maxOverlap - float from 0 - 10
