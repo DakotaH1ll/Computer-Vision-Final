@@ -1,44 +1,58 @@
+
+# $$$$$$$\                                $$\
+# $$  __$$\                               $$ |
+# $$ |  $$ | $$$$$$\   $$$$$$\   $$$$$$\  $$ | $$$$$$\       $$$$$$\  $$\   $$\
+# $$$$$$$  |$$  __$$\ $$  __$$\ $$  __$$\ $$ |$$  __$$\     $$  __$$\ $$ |  $$ |
+# $$  ____/ $$$$$$$$ |$$ /  $$ |$$ /  $$ |$$ |$$$$$$$$ |    $$ /  $$ |$$ |  $$ |
+# $$ |      $$   ____|$$ |  $$ |$$ |  $$ |$$ |$$   ____|    $$ |  $$ |$$ |  $$ |
+# $$ |      \$$$$$$$\ \$$$$$$  |$$$$$$$  |$$ |\$$$$$$$\ $$\ $$$$$$$  |\$$$$$$$ |
+# \__|       \_______| \______/ $$  ____/ \__| \_______|\__|$$  ____/  \____$$ |
+#                               $$ |                        $$ |      $$\   $$ |
+#                               $$ |                        $$ |      \$$$$$$  |
+#                               \__|                        \__|       \______/
+
+
+# Dakota Hill
+# 100523538
+# Computer Vision Final Project
+
 import numpy as np
 import cv2
 import sys
 from random import randint
 
 
-# Malisiewicz et al.
-def non_max_suppression_fast(boxes, overlapThresh):
-	# if there are no boxes, return an empty list
+def non_max_suppression(boxes, maxOverlap):
+
+	# No empty arrays
 	if len(boxes) == 0:
 		return []
 
-	# if the bounding boxes integers, convert them to floats --
-	# this is important since we'll be doing a bunch of divisions
+	# Convert integer values in the array to floats
 	if boxes.dtype.kind == "i":
 		boxes = boxes.astype("float")
 
-	# initialize the list of picked indexes
+	# Create new array for storing boxes
 	pick = []
 
-	# grab the coordinates of the bounding boxes
+	# Get the coordinates of the old boxes
 	x1 = boxes[:,0]
 	y1 = boxes[:,1]
 	x2 = boxes[:,2]
 	y2 = boxes[:,3]
 
-	# compute the area of the bounding boxes and sort the bounding
-	# boxes by the bottom-right y-coordinate of the bounding box
+	# Calculate area and sort the boxes by bottom right corner Y value
 	area = (x2 - x1 + 1) * (y2 - y1 + 1)
 	idxs = np.argsort(y2)
 
-	# keep looping while some indexes still remain in the indexes
-	# list
+	# Loop until no more boxes
 	while len(idxs) > 0:
-		# grab the last index in the indexes list and add the
-		# index value to the list of picked indexes
+		# Add the indexes in descending order to the new array
 		last = len(idxs) - 1
 		i = idxs[last]
 		pick.append(i)
 
-		# find the largest (x, y) coordinates for the start of
+		# Find the largest (x, y) coordinates for the start of
 		# the bounding box and the smallest (x, y) coordinates
 		# for the end of the bounding box
 		xx1 = np.maximum(x1[i], x1[idxs[:last]])
@@ -46,45 +60,46 @@ def non_max_suppression_fast(boxes, overlapThresh):
 		xx2 = np.minimum(x2[i], x2[idxs[:last]])
 		yy2 = np.minimum(y2[i], y2[idxs[:last]])
 
-		# compute the width and height of the bounding box
+		# Calculate new width and heigt of the new bounding box
 		w = np.maximum(0, xx2 - xx1 + 1)
 		h = np.maximum(0, yy2 - yy1 + 1)
 
-		# compute the ratio of overlap
+		# Compute the overlap between boxes
 		overlap = (w * h) / area[idxs[:last]]
 
-		# delete all indexes from the index list that have
+		# If there's more overlap than the allowed amount, remove the box
 		idxs = np.delete(idxs, np.concatenate(([last],
-			np.where(overlap > overlapThresh)[0])))
+			np.where(overlap > maxOverlap)[0])))
 
-	# return only the bounding boxes that were picked using the
-	# integer data type
+	#Return the new bounding boxes as integers (easier to draw)
 	return boxes[pick].astype("int")
 
 
 
-# initialize the HOG descriptor/person detector
+# Set the descriptor to look for people
 hog = cv2.HOGDescriptor()
 hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
 
+# Read in the image from the command line
 image = cv2.imread(sys.argv[1])
 
-# detect people in the image
+# Detects rectangles around 'people' in the image, does not draw them
 (rects, weights) = hog.detectMultiScale(image, winStride=(4, 4),
 	padding=(8, 8), scale=1.05)
 
-
-	# apply non-maxima suppression to the bounding boxes using a
-	# fairly large overlap threshold to try to maintain overlapping
-	# boxes that are still people
+# Deploy the rectangles to an array for easier calculations
 rects = np.array([[x, y, x + w, y + h] for (x, y, w, h) in rects])
-pick =  non_max_suppression_fast(rects, 0.45)
-	# draw the final bounding boxes
+
+# Apply NMS to the rectangles, using the given paramter (0-1)
+pick =  non_max_suppression(rects, float(sys.argv[2]))
+
+# Drae the NMS'd rectangles
 for (xA, yA, xB, yB) in pick:
 	cv2.rectangle(image, (xA, yA), (xB, yB), (randint(0, 255), randint(0, 255), randint(0, 255)), 5)
 
+#Print out the number of 'people' found, not always accurate
 print("Number Of People Found: ", len(pick))
 
-
+# Show the image with people highlighted
 cv2.imshow("Found People", image)
 cv2.waitKey(0)
