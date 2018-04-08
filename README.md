@@ -2,8 +2,8 @@
 Final project for CSCI 4220U
 
 To Run:
->Python People.py img maxOverlap
+>Python People.py img overlapThreshold
 
 img - image file
 
-maxOverlap - float from 0 - 10
+overlapThreshold - float from 0 - 1
